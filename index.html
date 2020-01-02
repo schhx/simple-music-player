@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> -->
+    <link rel="icon" href="data:image/ico;base64,aWNv">
+    <title>土味播放器</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .pointer {
+            cursor: pointer;
+        }
+
+        .short-input {
+            width: 40px;
+            text-align: center;
+        }
+
+        .center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .el-button {
+            display: inline-block;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            background: #fff;
+            border: 1px solid #dcdfe6;
+            color: #606266;
+            -webkit-appearance: none;
+            text-align: center;
+            box-sizing: border-box;
+            outline: none;
+            margin: 0;
+            transition: .1s;
+            font-weight: 500;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .el-button-default {}
+
+        .el-button:focus,
+        .el-button:hover {
+            color: #409eff;
+            border-color: #c6e2ff;
+            background-color: #ecf5ff;
+        }
+
+        .el-button:active {
+            color: #3a8ee6;
+            border-color: #3a8ee6;
+            outline: none;
+        }
+
+        .el-button--primary {
+            color: #fff;
+            background-color: #409eff;
+            border-color: #409eff;
+        }
+
+        .el-button--primary:active {
+            background: #3a8ee6;
+            border-color: #3a8ee6;
+            color: #fff;
+            outline: none;
+        }
+
+        .el-button--primary:focus,
+        .el-button--primary:hover {
+            background: #66b1ff;
+            border-color: #66b1ff;
+            color: #fff;
+        }
+
+        .el-input {
+            position: relative;
+            font-size: 14px;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .el-input__inner {
+            -webkit-appearance: none;
+            background-color: #fff;
+            background-image: none;
+            border-radius: 4px;
+            border: 1px solid #dcdfe6;
+            box-sizing: border-box;
+            color: #606266;
+            display: inline-block;
+            font-size: inherit;
+            height: 40px;
+            line-height: 40px;
+            outline: none;
+            padding: 0 15px;
+            transition: border-color .2s cubic-bezier(.645, .045, .355, 1);
+            width: 100%;
+        }
+
+        .el-input__inner:hover {
+            border-color: #c0c4cc;
+        }
+
+        .el-input__inner:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+
+        .el-input__inner#searchValue {
+            width: 180px;
+        }
+
+        .el-input__inner#currentPage {
+            width: 80px;
+        }
+
+        .el-input__inner#pageSize {
+            width: 80px;
+        }
+
+        #order {
+            -webkit-appearance: menulist;
+            width: initial;
+        }
+
+        #search_type,
+        /*#song-list,*/
+        #marquee {
+            font-size: 14px;
+            padding: 0 20px;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #606266;
+            height: 34px;
+            line-height: 34px;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        #song-list {
+            overflow: initial;
+        }
+
+        #song-list .song-list-title,
+        #song-list .pointer {
+            cursor: default;
+        }
+
+        #song-list .pointer>span:first-child {
+            cursor: pointer;
+        }
+
+        .song-list-title>span {
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .song-list-title>span:nth-child(1) {
+            width: 400px;
+        }
+
+        .song-list-title>span:nth-child(2) {
+            width: 100px;
+        }
+
+        .song-list-title>span:nth-child(3) {
+            width: 100px;
+        }
+
+        .footer-play {
+            position: fixed;
+            bottom: 0;
+            z-index: 9;
+            width: 100%;
+            padding: 8px 0;
+            display: flex;
+            justify-content: center;
+            background: rgba(255, 255, 255, .8);
+        }
+
+        .footer-play audio,
+        .footer-play marquee {
+            transform: translateY(12px);
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div style="text-align: center;padding: 8px 0;">
+            <input id="searchValue" value="周杰伦" type="text" class="el-input__inner" oninput="change(this,'searchValue')"
+                onkeydown="keyDown(event,this)">
+            <input id="currentPage" class="short-input el-input__inner" value="1" type="text"
+                oninput="change(this,'currentPage')" onkeydown="keyDown(event,this)">
+            <input id="pageSize" class="short-input el-input__inner" value="20" type="text"
+                oninput="change(this,'pageSize')" onkeydown="keyDown(event,this)">
+            <button type="button" class="el-button el-button--primary" onclick="search_btn()">搜索</button>
+        </div>
+
+        <div class="footer-play">
+            <div>
+                <audio controls autoplay src="">
+                    您的浏览器不支持 audio 标签。
+                </audio>
+                <marquee behavior="behavior" width="200" id="marquee" style="padding-bottom: 15px;"></marquee>
+                <button type="button" class="el-button" onclick="preSong()" style="position: relative;">上一首</button>
+                <select id="order" class="el-input__inner" onchange="changeOrder()">
+                    <option value="1">顺序播放</option>
+                    <option value="0">随机播放</option>
+                </select>
+                <button type="button" class="el-button" onclick="nextSong()" style="position: relative;">下一首</button>
+            </div>
+        </div>
+
+        <div id="operation" style="visibility: hidden;text-align: center;">
+            <button type="button" class="el-button" onclick="changePage('reduce')">上一页</button>
+            <span id="search_type" style="padding-left: 100px;padding-right: 100px"></span>
+            <button type="button" class="el-button" onclick="changePage('add')">下一页</button>
+        </div>
+
+        <div class="center">
+            <div id="song-list">
+            </div>
+        </div>
+        <div style="height: 70px"></div>
+    </div>
+    <script>
+        var list = []
+        var searchValue = '周杰伦'
+        var currentPage = 1
+        var pageSize = 10
+        var total = 9999
+        var order = 1;
+        var songIndex = 0;
+        var audio = document.querySelector('audio');
+        audio.onended = function () {
+            nextSong()
+        };
+        audio.volume = 0.2
+
+        function keyDown(event, el) {
+            if (event.keyCode === 13) {
+                search_btn()
+            }
+        }
+
+        function change(e, type) {
+            window[type] = document.querySelector(`#${type}`).value
+        }
+
+        function changeOrder() {
+            order = document.querySelector('#order').value
+        }
+
+        function search_btn() {
+            currentPage = document.querySelector(`#currentPage`).value
+            pageSize = document.querySelector(`#pageSize`).value
+            search()
+        }
+
+        function changePage(type) {
+            if (type == 'reduce') {
+                if (currentPage == 1) {
+                    return alert('还上一页个锤子？')
+                }
+                currentPage--
+            } else if (type == 'add') {
+                if (pageSize * currentPage > total) {
+                    return alert('还下一页个锤子？')
+                }
+                currentPage++
+            }
+            search()
+        }
+
+        function nextSong() {
+            if (order == 1) {
+                songIndex++;
+                if (songIndex >= list.length) {
+                    songIndex = 0
+                }
+            } else {
+                songIndex = Math.floor(Math.random() * list.length)
+            }
+            singNext(songIndex)
+        }
+
+        function preSong() {
+            if (order == 1) {
+                songIndex--;
+                if (songIndex < 0) {
+                    songIndex = list.length - 1
+                }
+            } else {
+                songIndex = Math.floor(Math.random() * list.length)
+            }
+            singNext(songIndex)
+        }
+
+        function singNext(index) {
+            var song = list[index]
+            var songInfo = song.name + ' - ' + song.singers[0].name + ' - ' + song.albums[0].name
+            sing(song.contentId, songInfo)
+        }
+
+        function search() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("get",
+                `http://pd.musicapp.migu.cn/MIGUM2.0/v1.0/content/search_all.do?&ua=Android_migu&version=5.0.1&text=${encodeURI(searchValue)}&pageNo=${currentPage}&pageSize=${pageSize}&searchSwitch={"song":1,"album":0,"singer":0,"tagSong":0,"mvSong":0,"songlist":0,"bestShow":1}`,
+                true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        let res = JSON.parse(xhr.responseText)
+                        if (res.code === '000000') {
+                            list = res.songResultData.result || []
+                            total = res.songResultData.totalCount
+                            document.querySelector('#search_type').innerHTML =
+                                `总数量：${total}&nbsp;&nbsp;&nbsp;&nbsp;当前页数：${currentPage}&nbsp;&nbsp;&nbsp;&nbsp;每页条数：${pageSize}`
+                            createNode()
+                        } else {
+                            alert(res.info)
+                        }
+                    }
+                }
+            }
+            xhr.send();
+        }
+
+        function createSingleNode(val, index) {
+            return `<div class="pointer" ><span onclick="checkSong(this)" data-index="${index}"  data-contentid="${val.contentId}" data-songinfo="${val.name} - ${val.singers && val.singers.length > 0 ? val.singers[0].name : ''} - ${val.albums && val.albums.length > 0 ? val.albums[0].name : ''}" style="width: 350px;height: 42px;display: inline-block;">${val.name}</span> <span style="width: 100px;height: 42px;display: inline-block;">${val.singers && val.singers.length > 0 ? val.singers[0].name : ''}</span>  <span style="width: 250px;height: 42px;display: inline-block;">${val.albums && val.albums.length > 0 ? val.albums[0].name : ''}</span></div>`
+        }
+
+        function createNode() {
+            var node = '<div>'
+            node +=
+                `<div class="song-list-title"><span>歌曲</span> <span>歌手</span>  <span>专辑</span></div>`
+            list.forEach(function (ele, index) {
+                node += createSingleNode(ele, index)
+            })
+            node += '</div>'
+            document.querySelector('#song-list').innerHTML = node
+            document.querySelector('#operation').style.visibility = 'visible'
+        }
+
+        function checkSong($event) {
+            songIndex = $event.dataset.index
+            sing($event.dataset.contentid, $event.dataset.songinfo)
+        }
+
+        function sing(contentId, songInfo) {
+            document.querySelector('#marquee').innerHTML = songInfo;
+            // 无损 formatType = SQ resourceType = E
+            // 高品 formatType = HQ resourceType = 2
+            let uri =
+                `http://app.pd.nf.migu.cn/MIGUM2.0/v1.0/content/sub/listenSong.do?toneFlag=HQ&netType=00&userId=15548614588710179085069&ua=Android_migu&version=5.1&copyrightId=0&contentId=${contentId}&resourceType=2&channel=1`
+            audio.src = uri
+        }
+    </script>
+</body>
+
+</html>
